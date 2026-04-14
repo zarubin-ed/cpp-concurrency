@@ -10,4 +10,4 @@ C++ concurrency runtime with fibers, coroutines, futures, synchronization primit
 - Fiber на основе всего предыдущего
 - Примитивы синхронизации для Файберов
 # Fun 
-- Future в функциональном стиле, подроьнее в соответствующей директории.
+- Future в функциональном стиле, подробнее в соответствующей директории.
