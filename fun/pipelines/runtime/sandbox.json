@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "targets": [
+        "runtime_sandbox_tasks_unit_tests"
+      ],
+      "profiles": [
+        "Debug",
+        "DebugASan"
+      ]
+    },
+    {
+      "targets": [
+        "runtime_sandbox_timers_unit_tests"
+      ],
+      "profiles": [
+        "Debug",
+        "DebugASan"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "tests": [
+    {
+      "targets": [
+        "fiber_sched_sleep_for_unit_tests"
+      ],
+      "profiles": [
+        "Debug",
+        "DebugASan"
+      ]
+    },
+    {
+      "targets": [
+        "fiber_sched_sleep_for_stress_tests"
+      ],
+      "profiles": [
+        "FaultyThreadASan",
+        "FaultyThreadTSan"
+      ]
+    }
+  ]
+}
