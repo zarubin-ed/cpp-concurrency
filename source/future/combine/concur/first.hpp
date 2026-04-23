@@ -3,7 +3,6 @@
 #include <exe/future/type/future.hpp>
 
 #include <memory>
-#include <cstdlib>  // std::abort
 
 namespace exe::future {
 

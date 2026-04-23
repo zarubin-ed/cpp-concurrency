@@ -2,11 +2,6 @@
 
 #include <exe/future/type/result.hpp>
 
-#include <exe/thread/spinlock.hpp>
-#include <exe/thread/unique_lock.hpp>
-
-#include <cstdlib>  // std::abort
-
 namespace exe::future {
 
 // First success / last error
@@ -16,36 +11,26 @@ TryFuture<T, E> FirstOk(TryFuture<T, E> f1, TryFuture<T, E> f2) {
   auto [future, promise] = Contract<Try<T, E>>();
 
   struct ProtectedPromise {
+    Promise<Try<T, E>> promise;
     enum : int { Satisfied = 1, ReportError = 2, ReturnValue = 0 };
 
     explicit ProtectedPromise(Promise<Try<T, E>> p)
         : promise(std::move(p)) {
     }
 
-    int state{ReturnValue};
-    thread::SpinLock spin;
-    Promise<Try<T, E>> promise;
+    twist::ed::std::atomic_int state{ReturnValue};
   };
 
   std::shared_ptr<ProtectedPromise> state =
       std::make_shared<ProtectedPromise>(std::move(promise));
 
   auto cb = [state](Try<T, E> exp) {
-    thread::UniqueLock lock(state->spin);
-
-    if (state->state == ProtectedPromise::Satisfied) {
-      return;
-    }
-
-    if (exp) {
-      state->state = ProtectedPromise::Satisfied;
+    if (exp && state->state.exchange(ProtectedPromise::Satisfied) !=
+                   ProtectedPromise::Satisfied) {
       std::move(state->promise).Set(std::move(exp.value()));
-    } else {
-      if (state->state == ProtectedPromise::ReportError) {
-        std::move(state->promise).Set(std::unexpected(std::move(exp.error())));
-      } else {
-        state->state = ProtectedPromise::ReportError;
-      }
+    } else if (!exp && state->state.exchange(ProtectedPromise::ReportError) ==
+                           ProtectedPromise::ReportError) {
+      std::move(state->promise).Set(std::unexpected(std::move(exp.error())));
     }
   };
 
