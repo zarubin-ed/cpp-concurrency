@@ -27,7 +27,6 @@ class TimerQueue final : public timer::IScheduler {
   void AdvanceClockToNextDeadline();
 
  private:
-
   Clock clock_;
   detail::IntrusiveTimerLeftistHeap tasks_;
 };

@@ -2,7 +2,7 @@
 
 #include <twist/ed/static/thread_local/ptr.hpp>
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 TWISTED_STATIC_THREAD_LOCAL_PTR(ThreadPool, current_pool_ptr);
 
@@ -43,4 +43,4 @@ void ThreadPool::Work() {
   }
 }
 
-};  // namespace exe::runtime::multi_thread
+};  // namespace exe::runtime::multi_thread::v1

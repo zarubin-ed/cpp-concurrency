@@ -35,14 +35,18 @@ class ThreadPool : public task::IScheduler {
   void Start();
 
   // task::IScheduler
-  void Submit(task::TaskBase*, task::SchedulingHint) override;
+  void Submit(task::TaskBase*,
+              task::SchedulingHint = task::SchedulingHint::UpToYou) override;
 
   void Stop();
 
   static ThreadPool* Current();
 
  private:
+  void Destribute(task::TaskBase*);
+
   const size_t num_threads_;
+  twist::ed::std::atomic_size_t workers_queue_head_{0};
   std::deque<Worker> workers_;
   Coordinator coordinator_;
   GlobalTaskQueue global_queue_;

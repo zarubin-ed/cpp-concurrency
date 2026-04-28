@@ -11,7 +11,7 @@
 #include <optional>
 
 // Unbounded blocking multi-producers/multi-consumers (MPMC) queue
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 template <typename T>
 class UnboundedBlockingQueue {
@@ -61,4 +61,4 @@ class UnboundedBlockingQueue {
   bool is_closed_ = false;
 };
 
-}  // namespace exe::runtime::multi_thread
+}  // namespace exe::runtime::multi_thread::v1

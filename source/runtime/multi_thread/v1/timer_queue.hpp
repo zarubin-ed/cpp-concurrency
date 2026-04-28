@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <optional>
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 class TimerBlockingQueue {
   using Clock = twist::ed::std::chrono::steady_clock;
@@ -78,4 +78,4 @@ class TimerBlockingQueue {
   detail::IntrusiveTimerLeftistHeap buffer_;
 };
 
-}  // namespace exe::runtime::multi_thread
+}  // namespace exe::runtime::multi_thread::v1

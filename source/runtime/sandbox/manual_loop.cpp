@@ -2,7 +2,7 @@
 
 namespace exe::runtime::sandbox {
 
-void ManualLoop::Submit(TaskBase* task) {
+void ManualLoop::Submit(TaskBase* task, task::SchedulingHint) {
   task_queue_.PushBack(task);
 }
 

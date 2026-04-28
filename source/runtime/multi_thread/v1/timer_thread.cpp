@@ -2,7 +2,7 @@
 
 #include <twist/ed/std/thread.hpp>
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 using namespace std::chrono_literals;
 
@@ -49,4 +49,4 @@ void TimerThread::Run() {
   }
 }
 
-}  // namespace exe::runtime::multi_thread
+}  // namespace exe::runtime::multi_thread::v1

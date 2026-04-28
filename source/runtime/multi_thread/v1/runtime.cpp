@@ -1,6 +1,6 @@
 #include "runtime.hpp"
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 Runtime::Runtime(size_t num_workers)
     : tasks_(num_workers),
@@ -30,4 +30,4 @@ Runtime& Runtime::WithTimers() {
   return *this;
 }
 
-}  // namespace exe::runtime::multi_thread
+}  // namespace exe::runtime::multi_thread::v1

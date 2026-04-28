@@ -8,7 +8,7 @@
 #include <twist/ed/std/thread.hpp>
 #include <twist/ed/std/chrono.hpp>
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 class TimerThread final : public timer::IScheduler {
  private:
@@ -38,4 +38,4 @@ class TimerThread final : public timer::IScheduler {
   twist::ed::std::thread timer_processor_;
 };
 
-}  // namespace exe::runtime::multi_thread
+}  // namespace exe::runtime::multi_thread::v1

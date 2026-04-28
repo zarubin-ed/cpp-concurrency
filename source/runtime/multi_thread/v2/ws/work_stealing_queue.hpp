@@ -41,12 +41,18 @@ class WorkStealingTaskQueue {
   }
 
   Task* TryPop() {
-    Task* buf[1];
-
-    if (Grab(std::span(buf)) == 1) {
-      return buf[0];
-    }
-    return nullptr;
+    size_t head;
+    size_t tail;
+    Task* task;
+    do {
+      head = head_.load();
+      tail = tail_.load();
+      if (head == tail) {
+        return nullptr;
+      }
+      task = buffer_[Mod(head)].Load();
+    } while (!head_.compare_exchange_weak(head, head + 1));
+    return task;
   }
 
   size_t Grab(std::span<Task*> out_buffer) {
@@ -82,3 +88,6 @@ class WorkStealingTaskQueue {
 };
 
 }  // namespace exe::runtime::multi_thread::v2
+
+// considers parking
+// //

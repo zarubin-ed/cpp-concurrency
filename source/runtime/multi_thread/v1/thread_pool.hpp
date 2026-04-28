@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <vector>
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 // Fixed-size pool of worker threads
 
@@ -32,7 +32,8 @@ class ThreadPool final : public task::IScheduler {
 
   void Start();
 
-  void Submit(TaskBase*, task::SchedulingHint) override;
+  void Submit(TaskBase*,
+              task::SchedulingHint = task::SchedulingHint::UpToYou) override;
 
   static ThreadPool* Current();
 
@@ -47,4 +48,4 @@ class ThreadPool final : public task::IScheduler {
   bool has_stopped_ = false;
 };
 
-};  // namespace exe::runtime::multi_thread
+};  // namespace exe::runtime::multi_thread::v1

@@ -1,21 +1,35 @@
 #include "runtime.hpp"
 
+#include <iostream>
+
 namespace exe::runtime::multi_thread::v2 {
 
-Runtime::Runtime(size_t /*num_workers*/) {
-  // Not implemented
+Runtime::Runtime(size_t num_workers)
+    : tasks_(num_workers),
+      timer_(&tasks_) {
 }
 
 void Runtime::Start() {
-  // Not implemented
+  tasks_.Start();
+  if (timer_.IsTimerEnabled()) {
+    timer_.Start();
+  }
 }
 
 void Runtime::Stop() {
-  // Not implemented
+  tasks_.Stop();
+  if (timer_.IsTimerEnabled()) {
+    timer_.Stop();
+  }
 }
 
 bool Runtime::Here() const {
-  return false;  // Not implemented
+  return tasks_.Current() == &tasks_;
+}
+
+Runtime& Runtime::WithTimers() {
+  timer_.EnableTimer();
+  return *this;
 }
 
 }  // namespace exe::runtime::multi_thread::v2

@@ -8,7 +8,7 @@
 #include "thread_pool.hpp"
 #include "timer_thread.hpp"
 
-namespace exe::runtime::multi_thread {
+namespace exe::runtime::multi_thread::v1 {
 
 class Runtime {
  public:
@@ -32,4 +32,4 @@ class Runtime {
   TimerThread timer_;
 };
 
-}  // namespace exe::runtime::multi_thread
+}  // namespace exe::runtime::multi_thread::v1

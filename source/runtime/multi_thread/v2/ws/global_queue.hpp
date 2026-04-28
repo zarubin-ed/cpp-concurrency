@@ -21,9 +21,9 @@ class GlobalTaskQueue {
 
   void PushMany(std::span<task::TaskBase*> buffer) {
     twist::ed::std::lock_guard guard(spin_);
-    
+
     for (auto task : buffer) {
-      tasks_.PushFront(task);
+      tasks_.PushBack(task);
     }
   }
 
@@ -37,12 +37,12 @@ class GlobalTaskQueue {
     size_t res = 0;
     for (auto& item : out_buffer) {
       item = tasks_.TryPopFront();
-      ++res;
       if (item == nullptr) {
         break;
       }
+      ++res;
     }
-    return res; 
+    return res;
   }
 
  private:

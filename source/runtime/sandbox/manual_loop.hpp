@@ -24,7 +24,8 @@ class ManualLoop final : public task::IScheduler {
   ManualLoop(ManualLoop&&) = delete;
   ManualLoop& operator=(ManualLoop&&) = delete;
 
-  void Submit(TaskBase*) override;
+  void Submit(TaskBase*,
+              task::SchedulingHint = task::SchedulingHint::UpToYou) override;
 
   // Run tasks
 
