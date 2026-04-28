@@ -41,6 +41,7 @@ source/
 │   ├── view/                # lightweight view/handle на runtime
 │   ├── multi_thread.hpp     # публичный интерфейс multithread runtime
 │   └── sandbox.hpp          # публичный интерфейс sandbox runtime
+│
 └── thread/
     ├── condvar.hpp              # condition variable
     ├── mutex.hpp                # mutex
