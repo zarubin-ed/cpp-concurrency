@@ -1,121 +1,94 @@
 #pragma once
+
+#include "state.hpp"
 #include "manual_storage.hpp"
 
-#include <exe/fiber/sync/wait_queue.hpp>
+#include <exe/fiber/core/handle.hpp>
+#include <exe/fiber/sched/suspend.hpp>
+
+#include <exe/runtime/task/hint.hpp>
 
 #include <exe/thread/spinlock.hpp>
 #include <exe/thread/unique_lock.hpp>
 
-#include <cstdlib>  // std::abort
-#include <queue>
+#include <vvv/list.hpp>
 
 namespace exe::fiber {
 
 namespace detail {
 
-struct RendezvousStateMachine {
-  struct State {
-    enum : int {
-      Init = 0,
-      Sent = 1,
-      Recieved = 2,
-      Rendezvous = Sent | Recieved
-    };
-  };
-
-  int State() {
-    return state_;
-  }
-
-  bool Send() {
-    return (state_ |= State::Sent) == State::Rendezvous;
-  }
-
-  bool Receive() {
-    return (state_ |= State::Recieved) == State::Rendezvous;
-  }
-
-  bool Sent() {
-    return (state_ & State::Sent) != 0;
-  }
-
-  bool Received() {
-    return (state_ & State::Recieved) != 0;
-  }
-
-  void Reset() {
-    state_ = State::Init;
-  }
-
-  bool IsRendezvous() const {
-    return state_ == State::Rendezvous;
-  }
-
- private:
-  int state_ = State::Init;
-};
-
 template <typename T>
 class RendezvousChannelState {
  public:
   ~RendezvousChannelState() {
-    assert(senders_.IsEmpty());
-    assert(receivers_.IsEmpty());
+    assert(waiters_.IsEmpty());
   }
 
   void Send(T val) {
     thread::UniqueLock lock(spin_);
 
-    while (state_.Sent()) {
-      senders_.Park(lock);
-    }
+    if (state_ == States::Receivers) {
+      auto receiver = waiters_.PopFrontNonEmpty();
+      std::construct_at(receiver->message, std::move(val));
 
-    if (state_.Send()) {
-      std::construct_at(message_, std::move(val));
-      partner_.WakeOne();
+      receiver->handle.Schedule(runtime::task::SchedulingHint::Next);
+
+      if (waiters_.IsEmpty()) {
+        state_ = States::Nobody;
+      }
     } else {
-      message_ = &val;
-      partner_.Park(lock);
-    }
+      WaiterNode<T> sender;
+      sender.message = &val;
 
-    Reset();
+      auto callback = [this, &sender, &lock](FiberHandle handle) {
+        sender.handle = handle;
+        waiters_.PushBack(&sender);
+        state_ = States::Senders;
+
+        lock.unlock();
+      };
+      Suspend(Callback(callback));
+
+      lock.lock();
+    }
   }
 
   T Receive() {
     thread::UniqueLock lock(spin_);
+    ManualStorage<T> res;
 
-    while (state_.Received()) {
-      receivers_.Park(lock);
-    }
+    if (state_ == States::Senders) {
+      auto sender = waiters_.PopFrontNonEmpty();
+      res.Emplace(std::move(*sender->message));
 
-    if (state_.Receive()) {
-      partner_.WakeOne();
-      return std::move(*message_);
+      sender->handle.Schedule(runtime::task::SchedulingHint::Next);
+      if (waiters_.IsEmpty()) {
+        state_ = States::Nobody;
+      }
     } else {
-      ManualStorage<T> ret;
-      message_ = &*ret;
+      WaiterNode<T> receiver;
+      receiver.message = &*res;
 
-      partner_.Park(lock);
-      return std::move(*ret);
+      auto callback = [this, &receiver, &lock](FiberHandle handle) {
+        receiver.handle = handle;
+        waiters_.PushBack(&receiver);
+        state_ = States::Receivers;
+
+        lock.unlock();
+      };
+      Suspend(Callback(callback));
+
+      lock.lock();
     }
+
+    return std::move(*res);
   }
 
  private:
-  void Reset() {
-    state_.Reset();
-    message_ = nullptr;
-    receivers_.WakeOne();
-    senders_.WakeOne();
-  }
-
-  WaitQueue senders_;
-  WaitQueue partner_;
-  WaitQueue receivers_;
+  vvv::IntrusiveList<WaiterNode<T>> waiters_;
 
   thread::SpinLock spin_;
-
-  T* message_ = nullptr;
-  RendezvousStateMachine state_;
+  uint32_t state_ = States::Nobody;
 };
 
 }  // namespace detail

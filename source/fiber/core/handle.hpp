@@ -2,6 +2,7 @@
 
 #include "fwd.hpp"
 
+#include <exe/runtime/task/hint.hpp>
 #include <exe/runtime/timer/timer.hpp>
 #include <exe/runtime/timer/duration.hpp>
 
@@ -30,7 +31,8 @@ class FiberHandle {
   // One-shot
   void Resume();
 
-  void Schedule();
+  void Schedule(
+      runtime::task::SchedulingHint = runtime::task::SchedulingHint::UpToYou);
   void Schedule(runtime::timer::Duration, runtime::timer::TimerBase*);
 
  private:

@@ -17,9 +17,9 @@ Fiber* FiberHandle::Release() {
   return std::exchange(fiber_, nullptr);
 }
 
-void FiberHandle::Schedule() {
+void FiberHandle::Schedule(runtime::task::SchedulingHint hint) {
   auto fiber = Release();
-  runtime::Tasks(fiber->runtime_).Submit(fiber);
+  runtime::Tasks(fiber->runtime_).Submit(fiber, hint);
 }
 
 void FiberHandle::Schedule(runtime::timer::Duration delay,

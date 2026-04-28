@@ -11,13 +11,15 @@ class WaitQueue {
   void Park(Mutex& mutex) {
     std::optional<FiberHandleNode> node;
 
-    Suspend([this, &mutex, &node](FiberHandle handle) {
+    auto callback = [this, &mutex, &node](FiberHandle handle) {
       node.emplace(handle);
 
       fibers_.PushBack(&*node);
 
       mutex.unlock();
-    });
+    };
+
+    Suspend(Callback(callback));
 
     mutex.lock();
   }

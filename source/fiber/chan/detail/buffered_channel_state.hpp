@@ -1,10 +1,16 @@
 #pragma once
 
+#include "state.hpp"
+#include "manual_storage.hpp"
 #include "circular_buffer.hpp"
 
-#include <exe/fiber/sync/wait_queue.hpp>
+#include <exe/fiber/core/handle.hpp>
+#include <exe/fiber/sched/suspend.hpp>
+
 #include <exe/thread/spinlock.hpp>
 #include <exe/thread/unique_lock.hpp>
+
+#include <vvv/list.hpp>
 
 #include <cassert>
 
@@ -16,76 +22,90 @@ template <typename T>
 class BufferedChannelState {
  public:
   explicit BufferedChannelState(size_t capacity)
-      : capacity_(capacity),
-        buffer_(capacity_) {
+      : buffer_(capacity) {
     assert(capacity > 0);
   }
 
   ~BufferedChannelState() {
-    assert(senders_.IsEmpty());
-    assert(receivers_.IsEmpty());
+    assert(waiters_.IsEmpty());
   }
 
   void Send(T val) {
     thread::UniqueLock lock(spin_);
 
-    TryRendezvous(val, lock);
-
-    while (buffer_.IsFull()) {
-      senders_.Park(lock);
+    if (state_ == States::Receivers) {
+      auto receiver = waiters_.PopFrontNonEmpty();
+      std::construct_at(receiver->message, std::move(val));
+      receiver->handle.Schedule(runtime::task::SchedulingHint::Next);
+      if (waiters_.IsEmpty()) {
+        state_ = States::Nobody;
+      }
+      return;
     }
 
-    receivers_.WakeOne();
+    if (buffer_.IsFull()) {
+      WaiterNode<T> sender;
+      sender.message = &val;
+
+      auto callback = [this, &sender, &lock](FiberHandle handle) {
+        sender.handle = handle;
+        waiters_.PushBack(&sender);
+        state_ = States::Senders;
+
+        lock.unlock();
+      };
+
+      Suspend(Callback(callback));
+
+      lock.lock();
+      return;
+    }
 
     buffer_.Emplace(std::move(val));
   }
 
   T Receive() {
     thread::UniqueLock lock(spin_);
+    ManualStorage<T> res;
 
-    while (buffer_.IsEmpty() && fast_pass_message_ == nullptr) {
-      receivers_.Park(lock);
+    WaiterNode<T> receiver;
+    receiver.message = &*res;
+
+    if (buffer_.IsEmpty()) {
+      auto callback = [this, &receiver, &lock](FiberHandle handle) {
+        receiver.handle = handle;
+        waiters_.PushBack(&receiver);
+        state_ = States::Receivers;
+
+        lock.unlock();
+      };
+      Suspend(Callback(callback));
+
+      lock.lock();
+      return std::move(*res);
     }
 
-    if (fast_pass_message_ != nullptr) {  // Rendezvous
-      partner_.WakeOne();
-      return std::move(*fast_pass_message_);
+    res.Emplace(std::move(buffer_.Pop()));
+
+    if (state_ == States::Senders) {
+      auto sender = waiters_.PopFrontNonEmpty();
+      buffer_.Emplace(std::move(*sender->message));
+
+      sender->handle.Schedule(runtime::task::SchedulingHint::Next);
+      if (waiters_.IsEmpty()) {
+        state_ = States::Nobody;
+      }
     }
 
-    senders_.WakeOne();
-
-    return buffer_.Pop();
+    return std::move(*res);
   }
 
  private:
-  void TryRendezvous(T& val, thread::UniqueLock<thread::SpinLock>& lock) {
-    while (!receivers_.IsEmpty() &&
-           fast_pass_message_ != nullptr) {  // Rendezvous
-      senders_.Park(lock);
-    }
-
-    if (!receivers_.IsEmpty()) {
-      fast_pass_message_ = &val;
-      receivers_.WakeOne();
-
-      partner_.Park(lock);
-      fast_pass_message_ = nullptr;
-
-      senders_.WakeOne();
-      return;
-    }
-  }
-
-  size_t capacity_;
-
-  WaitQueue senders_;
-  WaitQueue partner_;
-  WaitQueue receivers_;
+  CircularBuffer<T> buffer_;
+  vvv::IntrusiveList<WaiterNode<T>> waiters_;
 
   thread::SpinLock spin_;
-
-  CircularBuffer<T> buffer_;
-  T* fast_pass_message_ = nullptr;
+  uint32_t state_ = States::Nobody;
 };
 
 }  // namespace detail

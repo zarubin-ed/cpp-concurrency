@@ -3,8 +3,6 @@
 
 namespace exe::fiber {
 
-class WaitQueue;
-
 void Suspend(Callback);
 
 }  // namespace exe::fiber

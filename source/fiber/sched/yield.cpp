@@ -5,7 +5,7 @@ namespace exe::fiber {
 
 void Yield() {
   auto callback = [](FiberHandle handle) {
-    handle.Schedule();
+    handle.Schedule(runtime::task::SchedulingHint::Yield);
   };
 
   Suspend(Callback(callback));

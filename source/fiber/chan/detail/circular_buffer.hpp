@@ -12,7 +12,8 @@ class CircularBuffer {
 
   explicit CircularBuffer(size_t capacity)
       : capacity_(capacity + 1),
-        data_(new std::byte[(capacity_) * sizeof(T)]) {
+        data_(static_cast<std::byte*>(::operator new(
+            capacity_ * sizeof(T), std::align_val_t(alignof(T))))) {
   }
 
   template <typename... Args>
@@ -20,16 +21,17 @@ class CircularBuffer {
     assert(!IsFull());
 
     size_t pos = PostIncrement(tail_);
-    std::construct_at(&operator[](pos), std::forward<Args>(args)...);
+    std::construct_at(Data() + pos, std::forward<Args>(args)...);
   }
 
   T Pop() {
     assert(!IsEmpty());
 
-    size_t pos = PostIncrement(head_);
-    T ret = std::move(operator[](pos));
+    size_t pos = head_;
+    T ret = std::move(Data()[pos]);
+    std::destroy_at(Data() + pos);
+    head_ = (head_ + 1) % capacity_;
 
-    std::destroy_at(&operator[](pos));
     return ret;
   }
 
@@ -77,7 +79,7 @@ class CircularBuffer {
     for (size_t i = head_; i != tail_; i = PreIncrement(i)) {
       std::destroy_at(&operator[](i));
     }
-    delete[] data_;
+    ::operator delete(data_, std::align_val_t(alignof(T)));
   }
 
  private:
