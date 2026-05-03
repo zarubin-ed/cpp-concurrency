@@ -42,13 +42,17 @@ source/
 │   ├── multi_thread.hpp     # публичный интерфейс multithread runtime
 │   └── sandbox.hpp          # публичный интерфейс sandbox runtime
 │
-└── thread/
-    ├── condvar.hpp              # condition variable
-    ├── mutex.hpp                # mutex
-    ├── primitives.hpp           # общие thread primitives
-    ├── spinlock.hpp             # spinlock
-    ├── unique_lock.hpp          # unique_lock
-    └── wait_group.hpp           # wait group
+├── thread/
+│   ├── condvar.hpp          # condition variable
+│   ├── mutex.hpp            # mutex
+│   ├── primitives.hpp       # общие thread primitives
+│   ├── spinlock.hpp         # spinlock
+│   ├── unique_lock.hpp      # unique_lock
+│   └── wait_group.hpp       # wait group
+│
+└── gc/                      # сборка мусора
+    ├── hazard              
+    └── atomic_shared_ptr
 ```
 # Описание
 Проект представляет собой учебный C++ framework для конкурентного и асинхронного программирования. В его основе лежит собственный runtime с двумя многопоточными реализациями: базовым thread pool с глобальной очередью задач и более продвинутым work-stealing thread pool, в котором worker’ы используют локальные очереди и воруют задачи друг у друга для лучшей балансировки нагрузки. Отдельно реализованы sandbox runtime для тестов и моделирования времени, система intrusive tasks и таймеры для отложенного планирования.
