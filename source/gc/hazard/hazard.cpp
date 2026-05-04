@@ -4,6 +4,7 @@
 #include <twist/ed/static/thread_local/ptr.hpp>
 
 namespace gc::hazard {
+TWISTED_STATIC_THREAD_LOCAL_PTR(Mutator, current_mutator);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -22,6 +23,7 @@ Collector::~Collector() {  // head_ is invalid
   // collect garbage
   auto* cur = head_.load();
   while (cur != nullptr) {
+    current_mutator = cur;
     cur->Gc();
     cur = cur->next_.load();
   }
@@ -34,8 +36,6 @@ Collector::~Collector() {  // head_ is invalid
     cur = tmp;
   }
 }
-
-TWISTED_STATIC_THREAD_LOCAL_PTR(Mutator, current_mutator);
 
 Mutator* Collector::GetMutator() {
   if (current_mutator == nullptr) {
@@ -55,6 +55,9 @@ Mutator* Collector::GetMutator() {
 //////////////////////////////////////////////////////////////////////
 
 Mutator* GetMutator() {
+  if (current_mutator != nullptr) {
+    return current_mutator;
+  }
   return Collector::Instance().GetMutator();
 }
 
