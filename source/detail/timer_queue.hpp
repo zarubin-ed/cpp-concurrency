@@ -1,8 +1,8 @@
 #pragma once
 
-#include <exe/thread/primitives.hpp>
+#include "intrusive_leftist_heap.hpp"
 
-#include <exe/runtime/detail/intrusive_leftist_heap.hpp>
+#include <exe/thread/primitives.hpp>
 
 #include <exe/runtime/timer/timer.hpp>
 
@@ -13,11 +13,11 @@
 #include <algorithm>
 #include <optional>
 
-namespace exe::runtime::multi_thread::v1 {
+namespace exe::detail {
 
 class TimerBlockingQueue {
   using Clock = twist::ed::std::chrono::steady_clock;
-  using TimerBase = timer::TimerBase;
+  using TimerBase = runtime::timer::TimerBase;
 
  public:
   void Push(TimerBase* timer) {
@@ -69,6 +69,16 @@ class TimerBlockingQueue {
     return Clock::time_point(buffer_.Top()->deadline);
   }
 
+  std::optional<Clock::time_point> TryNearestDeadLine() {
+    std::unique_lock lock(mutex_);
+
+    if (buffer_.IsEmpty()) {
+      return std::nullopt;
+    }
+
+    return Clock::time_point(buffer_.Top()->deadline);
+  }
+
  private:
   size_t waiting_ = 0;
   bool is_closed_ = false;
@@ -78,4 +88,4 @@ class TimerBlockingQueue {
   detail::IntrusiveTimerLeftistHeap buffer_;
 };
 
-}  // namespace exe::runtime::multi_thread::v1
+}  // namespace exe::detail

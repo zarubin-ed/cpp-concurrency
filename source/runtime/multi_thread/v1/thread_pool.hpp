@@ -3,7 +3,7 @@
 #include <exe/runtime/task/task.hpp>
 #include <exe/runtime/task/scheduler.hpp>
 
-#include "queue.hpp"
+#include <exe/detail/queue.hpp>
 
 #include <twist/ed/std/thread.hpp>
 #include <twist/ed/static/thread_local/ptr.hpp>
@@ -42,7 +42,7 @@ class ThreadPool final : public task::IScheduler {
  private:
   void Work();
 
-  UnboundedBlockingQueue<TaskBase> tasks_;
+  detail::UnboundedBlockingQueue<TaskBase> tasks_;
   std::vector<twist::ed::std::thread> workers_;
   const size_t num_workers_;
   bool has_stopped_ = false;

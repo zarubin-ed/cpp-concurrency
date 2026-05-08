@@ -33,11 +33,9 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::Submit(task::TaskBase* task, task::SchedulingHint hint) {
   if (Current() != this) {
-    LOG("external submit -> global");
     global_queue_.PushOne(task);
     coordinator_.NotifyOnSubmit();
   } else {
-    LOG("internal submit");
     Worker::Current()->Push(task, hint);
   }
 }

@@ -11,7 +11,7 @@
 #include <optional>
 
 // Unbounded blocking multi-producers/multi-consumers (MPMC) queue
-namespace exe::runtime::multi_thread::v1 {
+namespace exe::detail {
 
 template <typename T>
 class UnboundedBlockingQueue {
@@ -42,6 +42,15 @@ class UnboundedBlockingQueue {
     return buffer_.PopFrontNonEmpty();
   }
 
+  std::optional<T*> TryPop() {
+    std::unique_lock lock(mutex_);
+    if (buffer_.IsEmpty()) {
+      return std::nullopt;
+    }
+
+    return buffer_.PopFrontNonEmpty();
+  }
+
   void Close() {
     std::lock_guard guard(mutex_);
 
@@ -61,4 +70,4 @@ class UnboundedBlockingQueue {
   bool is_closed_ = false;
 };
 
-}  // namespace exe::runtime::multi_thread::v1
+}  // namespace exe::detail

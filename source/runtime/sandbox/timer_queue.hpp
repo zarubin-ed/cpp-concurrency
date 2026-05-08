@@ -2,9 +2,10 @@
 
 #include "clock.hpp"
 
+#include <exe/detail/intrusive_leftist_heap.hpp>
+
 #include <exe/runtime/timer/timer.hpp>
 #include <exe/runtime/timer/scheduler.hpp>
-#include <exe/runtime/detail/intrusive_leftist_heap.hpp>
 
 #include <optional>
 

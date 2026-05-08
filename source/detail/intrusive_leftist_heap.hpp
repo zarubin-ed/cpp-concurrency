@@ -2,10 +2,10 @@
 
 #include <exe/runtime/timer/timer.hpp>
 
-namespace exe::runtime::detail {
+namespace exe::detail {
 
 class IntrusiveTimerLeftistHeap {
-  using TimerBase = timer::TimerBase;
+  using TimerBase = runtime::timer::TimerBase;
 
  public:
   void Push(TimerBase* item) {
@@ -68,4 +68,4 @@ class IntrusiveTimerLeftistHeap {
   TimerBase* top_ = nullptr;
 };
 
-}  // namespace exe::runtime::detail
+}  // namespace exe::detail

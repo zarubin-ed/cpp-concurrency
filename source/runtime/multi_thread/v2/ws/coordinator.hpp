@@ -10,8 +10,6 @@
 #include <deque>
 #include <queue>
 
-#include <exe/debug/logging.hpp>
-
 namespace exe::runtime::multi_thread::v2 {
 
 class Coordinator {
@@ -22,13 +20,14 @@ class Coordinator {
   }
 
   void NotifyOnSubmit() {
-    LOG("notify on submit");
     if (ShouldWakeWorker()) {
       WakeWorker();
     }
   }
 
   void AddStoppedWorker(Worker*);
+  void AddSpinning();
+  void RemoveSpinning();
 
   void Unlink(Worker* w);
 
@@ -37,25 +36,10 @@ class Coordinator {
   void WakeWorker();
 
  private:
-  struct WorkerSlot {
-    WorkerSlot()
-        : worker_(nullptr) {
-    }
-
-    Worker* Load() const {
-      return worker_.load();
-    }
-
-    void Store(Worker* worker) {
-      worker_.store(worker);
-    }
-
-    twist::ed::std::atomic<Worker*> worker_;
-  };
-
   [[maybe_unused]] size_t num_threads_;
   vvv::IntrusiveList<Worker> stopped_;
-
+  twist::ed::std::atomic<uint64_t> approximate_size_{0};
+  twist::ed::std::atomic<uint64_t> spinning_{0};
   thread::SpinLock spin_;
 };
 

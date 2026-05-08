@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <iostream>
 
-#include <exe/debug/logging.hpp>
-
 namespace exe::runtime::multi_thread::v2 {
 
 TWISTED_STATIC_THREAD_LOCAL_PTR(Worker, current_worker_ptr);
@@ -125,8 +123,6 @@ task::TaskBase* Worker::TryStealTasks() {
     }
   }
 
-  LOG(" worker {} has stolen {} tasks", index_, got);
-
   return GetFromBuffer(std::span(buffer.data(), got));
 }
 
@@ -137,7 +133,6 @@ task::TaskBase* Worker::TryPickTaskFromGlobalQueue() {
 task::TaskBase* Worker::TryGrabTasksFromGlobalQueue() {
   std::array<task::TaskBase*, kGrabAmount> buffer;
   size_t got = Host()->global_queue_.Grab(buffer);
-  LOG(" worker {} has grabbed {} tasks from global queue", index_, got);
   return GetFromBuffer(std::span(buffer.data(), got));
 }
 
@@ -152,7 +147,6 @@ task::TaskBase* Worker::TryGetWork() {
 
   {  // local queue
     if (auto* task = local_queue_.TryPop()) {
-      LOG(" worker {} has got task from local queue", index_);
       return task;
     }
   }
@@ -197,24 +191,24 @@ task::TaskBase* Worker::PickTask() {
     if (auto* task = TryGetWork()) {
       return task;
     }
-
+    Host()->coordinator_.AddSpinning();
     uint32_t expected_wu = wakeups_.load();
     Host()->coordinator_.AddStoppedWorker(this);
 
     if (auto* task = TryGetWork()) {
       Host()->coordinator_.Unlink(this);
+      Host()->coordinator_.RemoveSpinning();
       return task;
     }
 
     if (has_stopped_.load()) {
       Host()->coordinator_.Unlink(this);
+      Host()->coordinator_.RemoveSpinning();
       return nullptr;
     }
 
-    LOG("worker {} add stopped, wakeups={}", index_, expected_wu);
-    LOG("worker {} park", index_);
+    Host()->coordinator_.RemoveSpinning();
     twist::ed::futex::Wait(wakeups_, expected_wu);
-    LOG("worker {} wake from futex, wakeups={}", index_, wakeups_.load());
 
     Host()->coordinator_.Unlink(this);
   }
@@ -226,7 +220,6 @@ void Worker::Work() {
   current_worker_ptr = this;
 
   while (task::TaskBase* next = PickTask()) {
-    LOG(" worker {} is running", index_);
     Host()->coordinator_.NotifyOnSubmit();
     next->Run();
   }

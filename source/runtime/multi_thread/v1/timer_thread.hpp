@@ -1,6 +1,6 @@
 #pragma once
 
-#include "timer_queue.hpp"
+#include <exe/detail/timer_queue.hpp>
 
 #include <exe/runtime/timer/scheduler.hpp>
 #include <exe/runtime/task/scheduler.hpp>
@@ -34,7 +34,7 @@ class TimerThread final : public timer::IScheduler {
 
   bool timer_enable_ = false;
   task::IScheduler* sheduler_;
-  TimerBlockingQueue timers_;
+  detail::TimerBlockingQueue timers_;
   twist::ed::std::thread timer_processor_;
 };
 
