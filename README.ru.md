@@ -1,3 +1,5 @@
+[English](README.md) | [Русский](README.ru.md)
+
 # Конкурентное и асинхронное программирование на С++
 
 Учебный C++ framework для конкурентного программирования: fibers, futures, schedulers, timers и примитивы синхронизации.
